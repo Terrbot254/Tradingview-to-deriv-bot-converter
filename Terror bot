@@ -1,0 +1,41 @@
+//@version=5
+strategy("Bollinger Bands + RSI Bot", overlay=true)
+
+// Sample data for demonstration purposes (1-hour time frame)
+data = input(close, title="Close")
+
+// Account balance (starting with $100,000)
+account_balance = 100000
+
+// Set the take profit and stop loss levels
+take_profit_level = 4.0  // 400% of the account balance
+stop_loss_level = 2.0    // 200% of the account balance
+
+// Risk per trade (10% of the account balance)
+risk_per_trade = 0.1
+
+// Maximum number of trades to open at a time
+max_trades = 5
+
+// Calculate RSI (Relative Strength Index)
+rsi_period = input(14, title="RSI Period")
+rsi = ta.rsi(data, rsi_period)
+
+// Calculate Bollinger Bands
+bollinger_period = input(20, title="Bollinger Period")
+bollinger_std_dev = input(2.0, title="Bollinger Std Dev")
+bollinger_upper = ta.sma(data, bollinger_period) + bollinger_std_dev * ta.stdev(data, bollinger_period)
+bollinger_lower = ta.sma(data, bollinger_period) - bollinger_std_dev * ta.stdev(data, bollinger_period)
+
+// Entry and exit strategy using RSI and Bollinger Bands
+strategy.entry("Buy", strategy.long, when=(rsi < 30) and (data < bollinger_lower))
+strategy.entry("Sell", strategy.short, when=(rsi > 70) and (data > bollinger_upper))
+
+// Calculate the position size based on the risk amount and stop loss distance
+calculate_position_size(risk, entry_price, stop_loss_price) =>
+    position_size = risk / ((entry_price - stop_loss_price) / entry_price)
+    position_size
+
+// Buy or sell according to the generated signals and apply take profit and stop loss levels
+strategy.exit("Take Profit/Stop Loss", "Buy", profit=take_profit_level/100, loss=stop_loss_level/100)
+strategy.exit("Take Profit/Stop Loss", "Sell", profit=take_profit_level/100, loss=stop_loss_level/100)
